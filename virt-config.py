@@ -40,7 +40,8 @@ class VirtEdit:
         for domain in self.conn.listDefinedDomains():
             if domain == domname:
                 return True
-        for domain in self.conn.listAllDomains():
+        for domid in self.conn.listDomainsID():
+            domain = self.conn.lookupByID(domid)
             if domain.name() == domname:
                 return True
         return False
