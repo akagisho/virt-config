@@ -57,3 +57,4 @@ You can confirm new configuration.
 ## Supported OSs as Guest
 
 + Ubuntu
++ CentOS

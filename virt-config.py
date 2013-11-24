@@ -10,7 +10,7 @@ import guestfs
 
 class VirtEdit:
     def __init__(self, domname):
-        supported_distros = ["ubuntu"]
+        supported_distros = ["ubuntu", "centos"]
 
         conn = libvirt.open("qemu:///system")
         self.conn = conn
@@ -55,17 +55,54 @@ class VirtEdit:
             data = g.read_file(filename)
             regexp = r'(\s+address)\s+[\d\.]+$'
             if len(re.findall(regexp, data)) != 1:
-                raise Exception("Unsupported format: /etc/network/interfaces")
+                raise Exception("Unsupported format: %s" % filename)
             data = re.sub(regexp, r'\1 ' + ipaddr, data, 1)
             g.write(filename, data)
+        elif distro == "centos":
+            filename = "/etc/sysconfig/network-scripts/ifcfg-eth0"
+            data = g.read_file(filename)
+            regexp1 = re.compile(r'^IPADDR=.*$')
+            regexp2 = re.compile(r'^HWADDR=.*$')
+            flag = False
+            new_data = ""
+            for line in data.split("\n"):
+                if regexp1.match(line):
+                    flag = True
+                    line = "IPADDR=\"%s\"" % ipaddr
+                elif regexp2.match(line):
+                    line = "#" + line
+                new_data += line + "\n"
+            if flag:
+                g.write(filename, new_data)
+            else:
+                raise Exception("Unsupported format: %s" % filename)
+
+            filename = "/etc/udev/rules.d/70-persistent-net.rules"
+            g.write(filename, "")
 
     def update_hostname(self, fqdn):
         g = self.g
+        distro = self.distro
 
-        hostname = fqdn.rsplit(".", 2)[0]
-
-        filename = "/etc/hostname"
-        g.write(filename, hostname)
+        if distro == "ubuntu":
+            hostname = fqdn.rsplit(".", 2)[0]
+            filename = "/etc/hostname"
+            g.write(filename, hostname)
+        elif distro == "centos":
+            filename = "/etc/sysconfig/network"
+            data = g.read_file(filename)
+            regexp = re.compile(r'^HOSTNAME=.*$')
+            flag = False
+            new_data = ""
+            for line in data.split("\n"):
+                if regexp.match(line):
+                    flag = True
+                    line = "HOSTNAME=\"%s\"" % fqdn
+                new_data += line + "\n"
+            if flag:
+                g.write(filename, new_data)
+            else:
+                raise Exception("Unsupported format: %s" % filename)
 
     def update_hosts(self, ipaddr, fqdn):
         g = self.g
@@ -113,6 +150,25 @@ class VirtEdit:
             filename = "/etc/hostname"
             if g.is_file(filename):
                 hostname = g.read_file(filename).split("\n", 1)[0]
+
+        elif distro == "centos":
+            filename = "/etc/sysconfig/network-scripts/ifcfg-eth0"
+            if g.is_file(filename):
+                regexp = re.compile(r'^IPADDR=["\']?([^"\']*)["\']?$')
+                data = g.read_file(filename)
+                for line in data.split("\n"):
+                    m = regexp.match(line)
+                    if m:
+                        ipaddr = m.group(1)
+
+            filename = "/etc/sysconfig/network"
+            if g.is_file(filename):
+                regexp = re.compile(r'^HOSTNAME=["\']?([^"\']*)["\']?$')
+                data = g.read_file(filename)
+                for line in data.split("\n"):
+                    m = regexp.match(line)
+                    if m:
+                        hostname = m.group(1)
 
         print "ipaddr: %s" % ipaddr
         print "hostname: %s" % hostname
