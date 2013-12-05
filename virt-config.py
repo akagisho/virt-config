@@ -53,11 +53,20 @@ class VirtEdit:
         if distro == "ubuntu":
             filename = "/etc/network/interfaces"
             data = g.read_file(filename)
-            regexp = r'(\s+address)\s+[\d\.]+$'
-            if len(re.findall(regexp, data)) != 1:
+            regexp = re.compile(r'^(\s+address)\s+[\d\.]+')
+            flag = False
+            new_data = ""
+            for line in data.split("\n"):
+                m = regexp.match(line)
+                if m:
+                    flag = True
+                    line = "%s %s" % (m.group(1), ipaddr)
+                new_data += line + "\n"
+            if flag:
+                g.write(filename, new_data)
+            else:
                 raise Exception("Unsupported format: %s" % filename)
-            data = re.sub(regexp, r'\1 ' + ipaddr, data, 1)
-            g.write(filename, data)
+            g.write(filename, new_data)
         elif distro == "centos":
             filename = "/etc/sysconfig/network-scripts/ifcfg-eth0"
             data = g.read_file(filename)
