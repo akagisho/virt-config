@@ -94,9 +94,8 @@ class VirtEdit:
         distro = self.distro
 
         if distro == "ubuntu":
-            hostname = fqdn.rsplit(".", 2)[0]
             filename = "/etc/hostname"
-            g.write(filename, hostname)
+            g.write(filename, fqdn)
         elif distro == "centos":
             filename = "/etc/sysconfig/network"
             data = g.read_file(filename)
@@ -120,7 +119,7 @@ class VirtEdit:
             hostname, domain = fqdn.split(".", 1)
             add_line = "{0}\t{1} {2}".format(ipaddr, hostname, fqdn)
         else:
-            add_line = "{0}\t{1}".format(ipaddr, hostname)
+            add_line = "{0}\t{1}".format(ipaddr, fqdn)
 
         regexp = re.compile(r'^%s\s.*$' % ipaddr.replace(".", "\\."))
 
