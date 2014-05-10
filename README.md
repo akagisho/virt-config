@@ -14,8 +14,6 @@ virt-config can update configuration of a virtual machine via libvirt and guestf
 ### Get Sources
 
     $ git clone https://github.com/akagisho/virt-config
-    $ cd virt-config
-    $ chmod +x virt-config.py
 
 ## Usage
 
@@ -23,7 +21,7 @@ virt-config can update configuration of a virtual machine via libvirt and guestf
         virt-config.py [options] domname
     Options:
         -i new_ipaddr: update ip-address
-        -h new_hostname update hostname
+        -h new_hostname: update hostname
         -c: confirm result
 
 ## Example
